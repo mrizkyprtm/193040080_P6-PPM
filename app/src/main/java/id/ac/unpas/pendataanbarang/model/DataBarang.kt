@@ -4,6 +4,6 @@ data class DataBarang(
     val kode_brg: String,
     val nama_brg: String,
     val harga: String,
-    val stok: Int,
+    val stok: String,
     val jenis_brg: String
 )
