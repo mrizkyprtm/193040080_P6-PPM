@@ -9,30 +9,37 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.Divider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.LiveData
+import androidx.room.Room
 import id.ac.unpas.pendataanbarang.model.DataBarang
-import kotlinx.coroutines.flow.MutableStateFlow
+import id.ac.unpas.pendataanbarang.persistences.AppDatabase
 
 @Composable
 fun PendataanBarangScreen() {
-    val _list = remember { MutableStateFlow(listOf<DataBarang>()) }
-    val list by remember { _list }.collectAsState()
+    val context = LocalContext.current
+    val db = Room.databaseBuilder(
+        context,
+        AppDatabase::class.java, "pendataan-barang"
+    ).build()
+    val dataBarangDao = db.dataBarangDao()
+
+    val list: LiveData<List<DataBarang>> = dataBarangDao.loadAll()
+    val items: List<DataBarang> by list.observeAsState(initial = listOf())
+
     Column(modifier = Modifier.fillMaxWidth()) {
-        FormPendataanBarang { item ->
-            val newList = ArrayList(list)
-            newList.add(item)
-            _list.value = newList
-        }
+        FormPendataanBarang(dataBarangDao)
 
         Row(modifier = Modifier
-            .padding(15.dp).fillMaxWidth()) {
+            .padding(15.dp)
+            .fillMaxWidth()) {
 
             Column(modifier = Modifier.weight(3f)) {
                 Text(text = "Kode Barang", fontSize = 14.sp, textAlign = TextAlign.Center)
@@ -55,7 +62,7 @@ fun PendataanBarangScreen() {
             }
         }
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            items(items = list, itemContent = { item ->
+            items(items = items, itemContent = { item ->
                 Row(modifier = Modifier
                     .padding(15.dp)
                     .fillMaxWidth()) {

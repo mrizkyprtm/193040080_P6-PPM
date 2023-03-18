@@ -12,6 +12,7 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
@@ -20,12 +21,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.benasher44.uuid.uuid4
 import id.ac.unpas.pendataanbarang.model.DataBarang
+import id.ac.unpas.pendataanbarang.persistences.DataBarangDao
 import id.ac.unpas.pendataanbarang.ui.theme.Purple700
 import id.ac.unpas.pendataanbarang.ui.theme.Teal200
+import kotlinx.coroutines.launch
 
 @Composable
-fun FormPendataanBarang(onSimpan: (DataBarang) -> Unit) {
+fun FormPendataanBarang(dataBarangDao: DataBarangDao) {
+    val scope = rememberCoroutineScope()
     val kode_brg = remember { mutableStateOf(TextFieldValue("")) }
     val nama_brg = remember { mutableStateOf(TextFieldValue("")) }
     val harga = remember { mutableStateOf(TextFieldValue("")) }
@@ -46,7 +51,7 @@ fun FormPendataanBarang(onSimpan: (DataBarang) -> Unit) {
             modifier = Modifier
                 .padding(4.dp)
                 .fillMaxWidth(),
-            placeholder = { Text(text = "yyyy-mm-dd") })
+            placeholder = { Text(text = "AM01") })
 
         OutlinedTextField(label = { Text(text = "Nama Barang") },
             value = nama_brg.value,
@@ -101,14 +106,12 @@ fun FormPendataanBarang(onSimpan: (DataBarang) -> Unit) {
         ) {
             Column(modifier = Modifier.padding(horizontal = 0.dp, vertical = 5.dp)) {
                 Button(onClick = {
-                    val item = DataBarang(
-                        kode_brg.value.text,
-                        nama_brg.value.text,
-                        harga.value.text,
-                        stok.value.text,
-                        jenis_brg.value.text
-                    )
-                    onSimpan(item)
+                    val id = uuid4().toString()
+                    val item = DataBarang(kode_brg.value.text, nama_brg.value.text,
+                        harga.value.text, stok.value.text, jenis_brg.value.text)
+                    scope.launch {
+                        dataBarangDao.insertAll(item)
+                    }
                     kode_brg.value = TextFieldValue("")
                     nama_brg.value = TextFieldValue("")
                     harga.value = TextFieldValue("")
@@ -123,7 +126,9 @@ fun FormPendataanBarang(onSimpan: (DataBarang) -> Unit) {
                 }
             }
 
-            Column(modifier = Modifier.padding(5.dp).fillMaxWidth()) {
+            Column(modifier = Modifier
+                .padding(5.dp)
+                .fillMaxWidth()) {
                 Button(onClick = {
                     kode_brg.value = TextFieldValue("")
                     nama_brg.value = TextFieldValue("")
